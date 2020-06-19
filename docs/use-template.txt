@@ -1,0 +1,49 @@
+# get templates
+oc -n openshift get templates
+
+# grep template that you are interested in
+
+# capture the parameters needed for the template
+oc -n openshift process --parameters template-name
+
+# eg
+oc -n openshift process --parameters posgresql-emphemeral
+
+# create the pod providing params in 1 command
+oc -n openshift process posgresql-emphemeral
+	-p DATABASE_SERVICE_NAME=appdb-svc \
+	-p POSTGRESQL_USER=username \
+	-p POSTGRESQL_PASSWORD=password \
+	-p POSTGRESQL_DATABASE=appdb | oc create -f -
+
+# same command but slightly diff and easier format for namespace
+oc process openshift//posgresql-emphemeral \
+	-p DATABASE_SERVICE_NAME=appdb-svc \
+	-p POSTGRESQL_USER=username \
+	-p POSTGRESQL_PASSWORD=password \
+	-p POSTGRESQL_DATABASE=appdb | oc create -f -
+
+# this will create a secret for the params and provide to the bc
+
+
+# for the application you might want to create a db-connection secret as
+oc create secret generic db-secret --from-literal \
+	DB_CONNECTION_STR='postgresql://username:password@appdb-svc:5432/appdb'
+
+# deploy an an app that uses this db
+# eg
+oc new-app --name demoapp https://github.com/RedHatTraining/DO101-apps \
+	--context-dir contacts
+
+# then apply these secrets to the application deployment
+oc set env deployment/demoapp --from-secret/db-secret
+
+# now you can expose the demoapp as a route
+oc expose svc/demoapp
+
+# seed data into the database
+curl -X POST demoapp-svc.apps.url/seed
+
+# curl to see the webapp
+curl demoapp-svc.apps.url
+
