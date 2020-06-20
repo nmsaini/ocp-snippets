@@ -1,0 +1,41 @@
+# remove self-provisioner from system
+oc adm policy remove-cluster-role-from-group self-provisioner system:authenticated:oauth
+
+# add wp mgrs group that can create projects
+oc adm groups new wp-mgrs
+oc adm policy add-cluster-role-to-group self-provisioner wp-mgrs
+oc adm groups add-users wp-mgrs leader
+
+# developers who have edit
+oc adm groups new wp-devs
+oc adm groups add-users wp-devs developer
+oc policy add-role-to-group edit wp-devs
+
+# qa only have view
+oc adm groups new wp-qa
+oc adm groups add-users wp-qa qa
+oc policy add-role-to-group view wp-qa
+
+# Allow the wordpress application to run as root
+oc create sa wordpress-sa
+oc adm policy add-scc-to-user anyuid -z wordpress-sa
+
+# as developer
+oc create secret generic review-secret \
+	--from-literal user=wpuser --from-literal password=redhat123 \
+	--from-literal database=wordpress
+oc new-app --name mysql \
+	--docker-image registry.access.redhat.com/rhscl/mysql-57-rhel7:5.7-47
+oc set env dc/mysql --prefix MYSQL_ \
+	--from secret/review-secret
+
+# deploy wordpress
+oc new-app --name wordpress \
+	--docker-image docker.io/library/wordpress:5.3.0 \
+	-e WORDPRESS_DB_HOST=mysql \
+	-e WORDPRESS_DB_NAME=wordpress
+
+# set sa
+oc set serviceaccount deploymentconfig wordpress wordpress-sa
+c set env dc/wordpress --prefix WORDPRESS_DB_ --from secret/review-secret
+

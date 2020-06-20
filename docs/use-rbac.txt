@@ -1,0 +1,77 @@
+# RHOCP has two groups and bindings
+# cluster-role 	- cluster level
+# local-role 	- only project level
+
+# use the add-cluster-role-to-user to give cluster level permissions
+oc adm policy add-cluster-role-to-user cluster-role username
+
+# eg give cluster admin to user
+oc adm policy add-cluster-role-to-user cluster-admin username
+
+# to remove 
+oc adm policy remove-cluster-role-from-user cluster-role username
+
+# use who-can to view current permissions
+oc adm policy who-can delete user
+
+# here is a list of default roles
+#	admin 		- manage all project resources, including granting access to other users
+#	basic-user	- read access to project
+#	cluster-admin	- superuser access (full control)
+# 	cluster-status	- can get cluster status info
+# 	edit		- create/change/delete common app resources from a project
+#			  cannot act on mgmt resources like limits/quotas/or manage permissions
+#	self-provisioner- can create new project (cluster role NOT project role)
+#	view		- view project resources but cannot modify
+
+# admin role gives user access to project resources such as quotas/limit ranges/create new apps
+# edit role gives user access to act as a developer inside a project
+
+# add a role to a user using add-role-to-user
+oc adm policy add-role-to-user role-name username -n project
+oc adm policy add-role-to-user basic-user dev -n wordpress
+
+# there are diff types of users
+# 	regular users	- allowed access to platform
+#	system users	- created automatically when the infrastructure is defined
+#			  system:admin, system:openshift-registry, system:node:node1.example.com
+#	service accounts- system users associated with projectso
+#			  system:serviceaccount:default:deployer, system:serviceaccount:foo:builder
+
+# removing self provisioning cluster role from system:authenticated:oauth virtual groupo
+# get cluster role
+oc get clusterrolebinding -o wide | grep -E 'NAME|self-provisioner'
+> self-provisioners	... 	ClusterRole/self-provisioner	....
+
+oc describe clusterrolebindings self-provisioners
+
+# remove self-provisioner cluster role from system:authenticated:oauth
+oc adm policy remove-cluster-role-from-group self-provisioner system:authenticated:oauth
+
+# oc describe to verify
+oc describe clusterrolebindings self-provisioners
+> Error from server (NotFound): clusterrolebindings.rbac.authorization.k8s.io "self-provisioners" not found
+
+# give admin priviledges to a user for rbac
+oc policy add-role-to-user admin username
+
+# create a group to give rbac 
+oc adm groups new group1
+oc adm groups new group2
+
+# add user to group
+oc adm groups add-users group1 developer
+oc adm groups add-users group2 qa-engineer
+
+# oc get groups
+# give edit priviledges to group
+oc policy add-role-to-group edit group1
+oc policy add-role-to-group view group2
+
+# review role bindings
+oc get rolebindings -o wide
+
+# restore self-provisioners cluster role bindings
+oc adm policy add-cluster-role-to-group --rolebinding-name self-provisioners self-provisioner system:authenticated:oauth
+
+

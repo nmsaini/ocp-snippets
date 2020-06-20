@@ -1,0 +1,55 @@
+# use Security Context Constraints (SCCs)
+# controls
+#	Running priviledged containers
+#	Requesting additional capabilities
+#	Using HOST directories as volumes
+#	Changing SELinux context of a container
+#	Changing userID
+
+# list scc
+oc get scc
+>	anyuid
+>	hostaccess
+>	hostmount-anyuid
+>	hostnetwork
+>	node-exporter
+>	nonroot
+>	priviledged
+>	restricted
+
+# for more details on anyone of them
+oc describe scc anyuid
+
+# all containers created by OCP use SCC named restricted
+# which provides limited access to resourecs external to OCP
+# anyuid SCC is defined as "RunAsAny" user which means POD can run as any userID
+# to run with a diff we need to create a service account and bind it to the pod
+# create sa
+oc create serviceaccount service-acct-name
+
+# associate sa to SCC
+oc adm policy add-scc-to-user SCC -z service-acct-name
+
+# to find out which account can create a pod that requires elevated security use #scc-subject-review
+oc get pod podname -o yaml | oc adm policy scc-subject-review -f -
+
+# lets see an eg
+# deploy gitlabs that runs as root
+oc new-app --name gitlab --docker-image gitlab/gitlab-ce:8.4.3-ce.0
+
+# this will go into CrashLoopBackOff loop
+oc logs pod/gitlab-1-XXX
+> "insufficient permissions"
+
+# create a sa
+oc create sa gitlab-sa
+
+# assign scc
+oc adm policy add-scc-to-user anyuid -z gitlab-sa
+
+# assign gitlab-sa to the deployment
+oc set serviceaccount deploymentconfig gitlab gitlab-sa
+
+# or
+oc set sa dc/gitlab gitlab-sa
+

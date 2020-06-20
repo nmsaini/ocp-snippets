@@ -1,0 +1,57 @@
+# Ingress
+# A host name for the route. A route is always a subdomain of your cluster wildcard domain. For
+# example, if you are using a wildcard domain of apps.dev-cluster.acme.com
+
+# OpenShift Secure Routes
+# Edge		TLS termination occurs at the router
+# Pass-through	encrypted traffic is sent straight to the destination pod
+# Re-encryption	router terminates TLS with a certificate, and then re-encrypts
+
+oc expose service frontend
+# <route-name>-<project-name>.<default-domain>
+
+# Before creating a secure route, you need to generate a TLS certificate.
+oc create route edge --service api-frontend --hostname api.apps.acme.com --key api.key --cert api.crt
+
+# The --key option requires the certificate private key, and the 
+# --cert option requires the certificate that has been signed with that key
+
+# Pass-Through
+# The best way to accomplish this is by using OpenShift TLS secrets. 
+# Secrets are exposed via a mount point into the container.
+
+# generate private key
+openssl genrsa -out application.key 2048
+
+# new csr
+openssl req -new \
+	-subj "/C=US/ST=North Carolina/L=Raleigh/O=Red Hat/CN=https.OCP_WILDCARD_DOMAIN" \
+	-key application.key -out application.csr
+
+# signed by CA
+openssl x509 -req -in application.csr \
+	-passin file:passphrase.txt \
+	-CA application-CA.pem -CAkey application-CA.key -CAcreateserial \
+	-out application.crt -days 1825 -sha256 -extfile application.ext
+
+oc create secret tls todo-certs \
+	--cert=certs/application.crt \
+	--key=certs/application.key
+
+oc describe pod podname | grep Mounts -A2
+
+application.yaml
+volumes:
+- name: tls-certs
+  secret:
+    secretName: todo-certs
+
+oc create route passthrough https \
+	--service todo-https --port 8443 \
+	--hostname https.OCP_WILDCARD_DOMAIN
+
+# verify use --cacert if you have the CA such that curl doesn't throw errors
+curl -vvI \
+	--cacert certs/application-CA.pem \
+	https://https.OCP_WILDCARD_DOMAIN
+
