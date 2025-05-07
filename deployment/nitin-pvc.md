@@ -20,3 +20,12 @@ echo "
 oc expose deployment nitin 
 oc expose svc/nitin
 ```
+# test
+```
+curl -s $(oc get routes nitin -o jsonpath="{.spec.host}")
+```
+
+# tear down
+```
+oc delete all -l app=nitin
+```
