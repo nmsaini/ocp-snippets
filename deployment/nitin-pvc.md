@@ -24,6 +24,7 @@ oc expose svc/nitin
 ```
 curl -s $(oc get routes nitin -o jsonpath="{.spec.host}")
 ```
+use a browser to confirm if needed
 
 # tear down
 ```
