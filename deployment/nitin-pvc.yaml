@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nitin
+  name: nitin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: nitin
+  template:
+    metadata:
+      labels:
+        deployment: nitin
+    spec:
+      containers:
+        - image: quay.io/fedora/httpd-24-micro
+          name: httpd
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 8443
+              protocol: TCP
+          volumeMounts:
+            - mountPath: "/var/www/html"
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: nitin-pvc
+      securityContext:
+        fsGroup: 1001
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nitin-pvc
+spec:
+  storageClassName: rook-ceph-block
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
