@@ -1,3 +1,8 @@
+# allow pod security privilege
+```
+oc adm policy add-scc-to-user anyuid -z default
+```
+
 # create deployment
 ```
 oc apply -f nitin-pvc.yaml
