@@ -1,36 +1,36 @@
-# allow pod security privilege
+# Allow pod security privilege
 ```
 oc adm policy add-scc-to-user anyuid -z default
 ```
 
-# create deployment
+# Create Deployment
 ```
 oc apply -f https://raw.githubusercontent.com/nmsaini/ocp-snippets/refs/heads/master/deployment/nitin-pvc.yaml
 ```
-# Change the StorageClass (if needed)
+# Change StorageClass (if needed)
 ```
 oc get pvc nitin-pvc -o yaml | yq '.spec.storageClassName="new-storage-class"' | oc replace -f -
 ```
 
-# write a html file to target using terminal
+# Write a html file to target using terminal
 ```
 echo "
 <html><body><h2>This is a test</h2></body></html>
 " > /var/www/html/index.html
 ```
 
-# expose route
+# Expose route
 ```
 oc expose deployment nitin 
 oc expose svc/nitin
 ```
-# test
+# Test
 ```
 curl -s $(oc get routes nitin -o jsonpath="{.spec.host}")
 ```
 use a browser to confirm if needed
 
-# tear down
+# Tear-down
 ```
 oc delete all -l app=nitin
 ```
