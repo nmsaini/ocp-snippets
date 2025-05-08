@@ -37,3 +37,6 @@ use a browser to confirm if needed
 ```
 oc delete all -l app=nitin
 ```
+```
+oc delete pvc -l app=nitin
+```
