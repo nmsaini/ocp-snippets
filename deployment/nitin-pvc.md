@@ -14,6 +14,9 @@ oc get pvc nitin-pvc -o yaml | yq '.spec.storageClassName="new-storage-class"' |
 
 # Write a html file to target using terminal
 ```
+oc rsh $(oc get po -o name -l app=nitin)
+```
+```
 echo "
 <html><body><h2>This is a test</h2></body></html>
 " > /var/www/html/index.html
