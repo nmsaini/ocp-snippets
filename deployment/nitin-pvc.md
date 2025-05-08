@@ -7,6 +7,10 @@ oc adm policy add-scc-to-user anyuid -z default
 ```
 oc apply -f https://raw.githubusercontent.com/nmsaini/ocp-snippets/refs/heads/master/deployment/nitin-pvc.yaml
 ```
+# Change the StorageClass (if needed)
+```
+oc get pvc nitin-pvc -o yaml | yq '.spec.storageClassName="new-storage-class"' | oc replace -f -
+```
 
 # write a html file to target using terminal
 ```
