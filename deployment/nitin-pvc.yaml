@@ -35,6 +35,8 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  labels:
+    app: nitin
   name: nitin-pvc
 spec:
   storageClassName: rook-ceph-block
